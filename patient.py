@@ -1,8 +1,7 @@
 import datetime
 import re
 
-from helper import get_sleep_stages, make_after, plm_from_xml, arousal_from_xml
-from plm import Plm
+from helper import get_sleep_stages, make_after, plm_from_xml, simple_event_from_xml
 
 
 class Patient:
@@ -158,11 +157,17 @@ class Patient:
         with open(xml_path + '\\' + fname, 'r') as f:
             data = f.read()
             for se in re.finditer(re_se, data):
-                event = arousal_from_xml(se.group(0))  # event is a tuple (tstart, tend) in seconds since start of recording
+                event = simple_event_from_xml(se.group(0))  # event is a tuple (tstart, tend) in seconds since start of recording
 
                 ts = self.start_time + datetime.timedelta(seconds=event[0])
                 te = self.start_time + datetime.timedelta(seconds=event[1])
 
                 events.append((ts, te))
 
+        return events
+
+    def get_respiratory_events(self, xml_path, fname):
+        # Central Apnea, Mixed Apena, Obstructive Apnea
+        # Obstructive_Hypopnea, Central_Hypopnea, Mixed_Hypopnea, Hypopnea
+        events = []
         return events

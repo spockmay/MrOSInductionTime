@@ -152,7 +152,7 @@ def plm_from_xml(xml):
     event = Plm(tstart, tend, side)
     return event
 
-def arousal_from_xml(xml):
+def simple_event_from_xml(xml):
     # <ScoredEvent><Name>Arousal (ASDA)</Name><Start>5444.5</Start><Duration>4.9</Duration><Input>C3</Input></ScoredEvent>
     re_start = re.compile(ur'<Start>(\d*\.*\d*)<\/Start>')
     re_dur = re.compile(ur'<Duration>(\d*\.*\d*)<\/Duration>')
