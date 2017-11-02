@@ -93,7 +93,7 @@ def chunk_times(time, ts, tf, dt_chunk):
     chunk = (ts, ts + dt_chunk)
     if time < ts or time > tf:
         return None
-    while chunk[1] <= tf:
+    while chunk[1] <= tf+datetime.timedelta(seconds=1):
         if time < chunk[1]:
             return chunk
         chunk = (chunk[0]+dt_chunk, chunk[1]+dt_chunk)
@@ -126,17 +126,6 @@ def get_control_windows(nsvt_onset, chunk_times, window_width, interval):
         t = t + interval
 
     return windows
-
-def get_control_periods(ctrl_window, ctrl_period_width):
-    ctl_periods = []
-    ctrl_period_width = datetime.timedelta(seconds=ctrl_period_width)
-    t = ctrl_window[0]
-
-    while t+ctrl_period_width <= ctrl_window[1]:
-        ctl_periods.append((t, t+ctrl_period_width))
-        t = t+ctrl_period_width
-
-    return ctl_periods
 
 def get_sleep_stages(xml_path, fname):
     re_ss = re.compile(ur'<SleepStage>(\d+?)<\/SleepStage>')
