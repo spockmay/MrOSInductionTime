@@ -18,9 +18,11 @@ XML_DIRECTORY = DATA_DIR + '\\edfs'
 MSACCESS_DIRECTORY = DATA_DIR + '\\hrv'
 SOMTE_DIRECTORY = DATA_DIR + '\\shhs1-csv'
 
-DT_CONTROL_WINDOW = 2.5*60 # 10 min - width of control window
-DT_INTERVAL       = 5*60 # 10 min - intervals from NSVT onset
-DT_CONTROL_PERIOD = 30    # seconds
+DT_CONTROL_WINDOW  = 2.5*60 # 10 min - width of control window
+DT_INTERVAL        = 5*60   # 10 min - intervals from NSVT onset
+DT_CONTROL_PERIOD  = 30     # seconds
+N_CTRL_PERIODS     = 3      # number of control periods to downselect to.  Set to None for no downselect
+MIN_N_CTRL_PERIODS = 0      # minimum number of control periods to consider for inclusion
 
 random.seed(123456)
 
@@ -67,6 +69,17 @@ for pt in patients:
                 # select one of the possible control periods
                 selected = random.sample(poss_ctl_periods, 1)
                 ctrl_periods.append(selected)
+
+        # skip this NSVT event if there are not sufficient number of control periods
+        if len(ctrl_periods) < MIN_N_CTRL_PERIODS:
+            continue
+
+        # downselect number of control periods
+        if N_CTRL_PERIODS is not None:
+            if len(ctrl_periods) >= N_CTRL_PERIODS:
+                ctrl_periods = random.sample(ctrl_periods, N_CTRL_PERIODS)
+            else:
+                continue
 
         print pt.id, pt.walltime_to_epoch(nsvt), len(ctrl_periods), len(ctrl_windows)
         if len(ctrl_periods) > 2:
