@@ -170,5 +170,4 @@ class Patient:
         # Central Apnea, Mixed Apena, Obstructive Apnea
         # Obstructive_Hypopnea, Central_Hypopnea, Mixed_Hypopnea, Hypopnea
         events = []
-
         return events
