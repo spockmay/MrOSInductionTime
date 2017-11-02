@@ -1,8 +1,9 @@
 import datetime
 import re
 
-from helper import get_sleep_stages, make_after, plm_from_xml
+from helper import get_sleep_stages, make_after, plm_from_xml, arousal_from_xml
 from plm import Plm
+
 
 class Patient:
     id = ""
@@ -10,7 +11,9 @@ class Patient:
     sleep_onset = None
     start_time = None
     nsvt_times = None
-    plm_events = None
+
+    plm_events = None       # list of tuples of datetimes
+    arousal_events = None   # list of tuples of datetimes
 
     def __init__(self, id, study_times, start_time, nsvt_times, xml_path):
         self.id = id
@@ -25,6 +28,9 @@ class Patient:
 
         # get the PLM event data
         self.plm_events = self.get_plm(xml_path, fname)
+
+        # get the arousal events
+        self.arousal_events = self.get_arousals(xml_path, fname)
 
     def walltime_to_epoch(self, time):
         dt = time - self.start_time
@@ -119,7 +125,7 @@ class Patient:
         with open(xml_path + '\\' + fname, 'r') as f:
             data = f.read()
             for se in re.finditer(re_se, data):
-                event = plm_from_xml(se.group(0))
+                event = plm_from_xml(se.group(0))  # event is of class Plm
 
                 event.tstart = self.start_time + datetime.timedelta(seconds=event.tstart)
                 event.tend = self.start_time + datetime.timedelta(seconds=event.tend)
@@ -145,3 +151,18 @@ class Patient:
 
         return plm_periods
 
+    def get_arousals(self, xml_path, fname):
+        re_se = re.compile(ur'(<ScoredEvent><Name>Arousal.+?<\/ScoredEvent>)')
+
+        events = []
+        with open(xml_path + '\\' + fname, 'r') as f:
+            data = f.read()
+            for se in re.finditer(re_se, data):
+                event = arousal_from_xml(se.group(0))  # event is a tuple (tstart, tend) in seconds since start of recording
+
+                ts = self.start_time + datetime.timedelta(seconds=event[0])
+                te = self.start_time + datetime.timedelta(seconds=event[1])
+
+                events.append((ts, te))
+
+        return events
