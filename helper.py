@@ -2,6 +2,7 @@ import datetime
 import os
 import re
 
+from plm import Plm
 
 def clock_to_datetime(clock_str):
     [h, m, s] = clock_str.split(':')
@@ -137,4 +138,16 @@ def get_sleep_stages(xml_path, fname):
 
     return sleep_list
 
+def plm_from_xml(xml):
+    # <ScoredEvent><Name>PLM (Right)</Name><Start>818.4</Start><Duration>1.7</Duration><Input>Leg R</Input></ScoredEvent>
+    re_start = re.compile(ur'<Start>(\d*\.*\d*)<\/Start>')
+    re_dur = re.compile(ur'<Duration>(\d*\.*\d*)<\/Duration>')
+    re_side = re.compile(ur'PLM \((\w+?)\)')
 
+    tstart = float(re.search(re_start,xml).group(1))
+    dur = float(re.search(re_dur,xml).group(1))
+    tend = tstart + dur
+    side = re.search(re_side,xml).group(1)
+
+    event = Plm(tstart, tend, side)
+    return event

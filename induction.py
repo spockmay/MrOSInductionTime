@@ -18,10 +18,10 @@ XML_DIRECTORY = DATA_DIR + '\\edfs'
 MSACCESS_DIRECTORY = DATA_DIR + '\\hrv'
 SOMTE_DIRECTORY = DATA_DIR + '\\shhs1-csv'
 
-DT_CONTROL_WINDOW  = 2.5*60 # 10 min - width of control window
-DT_INTERVAL        = 5*60   # 10 min - intervals from NSVT onset
-DT_CONTROL_PERIOD  = 30     # seconds
-DT_HAZARD_OFFSET   = 0      # seconds between the end of the hazard period and the NSVT event
+DT_CONTROL_WINDOW  = 2.5*60 # seconds - width of control window
+DT_INTERVAL        = 5*60   # seconds - intervals from NSVT onset
+DT_CONTROL_PERIOD  = 30     # seconds - width of the control periods
+DT_HAZARD_OFFSET   = 0      # seconds - difference between the end of the hazard period and the NSVT event
 
 N_CTRL_PERIODS     = 3      # number of control periods to downselect to.  Set to None for no downselect
 MIN_N_CTRL_PERIODS = 0      # minimum number of control periods to consider for inclusion

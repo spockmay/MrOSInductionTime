@@ -1,6 +1,8 @@
 import datetime
+import re
 
-from helper import get_sleep_stages, make_after
+from helper import get_sleep_stages, make_after, plm_from_xml
+from plm import Plm
 
 class Patient:
     id = ""
@@ -8,6 +10,7 @@ class Patient:
     sleep_onset = None
     start_time = None
     nsvt_times = None
+    plm_events = None
 
     def __init__(self, id, study_times, start_time, nsvt_times, xml_path):
         self.id = id
@@ -19,6 +22,9 @@ class Patient:
         # extract the sleeping stages (based on epoch) from the XML file for the patient
         fname = self.id.lower() + '.edf.XML'
         self.sleep_list = get_sleep_stages(xml_path, fname)
+
+        # get the PLM event data
+        self.plm_events = self.get_plm(xml_path, fname)
 
     def walltime_to_epoch(self, time):
         dt = time - self.start_time
@@ -96,3 +102,46 @@ class Patient:
         te = nsvt_time - nsvt_offset
         hazard_period = (te - ctrl_period_width, te)
         return hazard_period
+
+    def get_plm(self, xml_path, fname):
+        """Find all PLM events that occur for this patient
+        PLM is denoted in the .XML file by <ScoredEvent> with <Name> = PLM (Right or Left)
+
+        If the Right and Left start within 5 sec (< 5) then they are counted as a single event.
+
+        :param xml_path: path to the XML files
+        :param fname: name of the .XML file for this patient
+        :return:
+        """
+        re_se = re.compile(ur'(<ScoredEvent><Name>PLM.+?<\/ScoredEvent>)')
+
+        plm_events = []
+        with open(xml_path + '\\' + fname, 'r') as f:
+            data = f.read()
+            for se in re.finditer(re_se, data):
+                event = plm_from_xml(se.group(0))
+
+                event.tstart = self.start_time + datetime.timedelta(seconds=event.tstart)
+                event.tend = self.start_time + datetime.timedelta(seconds=event.tend)
+
+                # skip if awake at start of PLM event
+                if not self.is_sleep_time(event.tstart):
+                    continue
+
+                # determine if this event is associated with the last event
+                if len(plm_events) > 0:
+                    if event.is_associated(plm_events[-1], 0.5):
+                        # if it is, then extend the tend of the prev event and ignore the new event
+                        plm_events[-1].tend = max(event.tend, plm_events[-1].tend)
+                        plm_events[-1].side = event.side
+                        continue
+
+                plm_events.append(event)
+
+        # Convert all PLM events in plm_events to windows of clock time
+        plm_periods = []
+        for event in plm_events:
+            plm_periods.append((event.tstart, event.tend))
+
+        return plm_periods
+
