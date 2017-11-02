@@ -21,6 +21,8 @@ SOMTE_DIRECTORY = DATA_DIR + '\\shhs1-csv'
 DT_CONTROL_WINDOW  = 2.5*60 # 10 min - width of control window
 DT_INTERVAL        = 5*60   # 10 min - intervals from NSVT onset
 DT_CONTROL_PERIOD  = 30     # seconds
+DT_HAZARD_OFFSET   = 0      # seconds between the end of the hazard period and the NSVT event
+
 N_CTRL_PERIODS     = 3      # number of control periods to downselect to.  Set to None for no downselect
 MIN_N_CTRL_PERIODS = 0      # minimum number of control periods to consider for inclusion
 
@@ -81,6 +83,10 @@ for pt in patients:
             else:
                 continue
 
+        # determine the hazard period for the NSVT
+        hazard_period = pt.get_hazard_period(nsvt, DT_CONTROL_PERIOD, DT_HAZARD_OFFSET)
+
+        # silly output code for v&v
         print pt.id, pt.walltime_to_epoch(nsvt), len(ctrl_periods), len(ctrl_windows)
         if len(ctrl_periods) > 2:
             i += 1

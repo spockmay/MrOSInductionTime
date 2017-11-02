@@ -81,3 +81,18 @@ class Patient:
                 ctl_periods.append((ts, tf))
 
         return ctl_periods
+
+    def get_hazard_period(self, nsvt_time, ctrl_period_width, nsvt_offset):
+        """Compute the hazard period for a given NSVT event
+
+        :param nsvt_time: datetime of the NSVT event
+        :param ctrl_period_width: integer number of seconds
+        :param nsvt_offset: integer number of seconds
+        :return: tuple of datetimes
+        """
+        ctrl_period_width = datetime.timedelta(seconds=ctrl_period_width)
+        nsvt_offset = datetime.timedelta(seconds=nsvt_offset)
+
+        te = nsvt_time - nsvt_offset
+        hazard_period = (te - ctrl_period_width, te)
+        return hazard_period
