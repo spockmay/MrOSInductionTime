@@ -13,6 +13,7 @@ class Patient:
 
     plm_events = None       # list of tuples of datetimes
     arousal_events = None   # list of tuples of datetimes
+    resp_events = None      # dictionary of list of tuples of datetimes
 
     def __init__(self, id, study_times, start_time, nsvt_times, xml_path):
         self.id = id
@@ -30,6 +31,7 @@ class Patient:
 
         # get the arousal events
         self.arousal_events = self.get_arousals(xml_path, fname)
+        self.resp_events = self.get_respiratory_events(xml_path, fname)
 
     def walltime_to_epoch(self, time):
         dt = time - self.start_time
@@ -168,6 +170,25 @@ class Patient:
 
     def get_respiratory_events(self, xml_path, fname):
         # Central Apnea, Mixed Apena, Obstructive Apnea
-        # Obstructive_Hypopnea, Central_Hypopnea, Mixed_Hypopnea, Hypopnea
-        events = []
+        # Obstructive Hypopnea, Central Hypopnea, Mixed Hypopnea, Hypopnea
+        events = {'ca': [],
+                  'ma': [],
+                  'oa': [],
+                  'h': []}
+        map = {'ca': "Central Apnea",
+               'ma': "Mixed Apnea",
+               'oa': "Obstructive Apnea",
+               'h':  "(Central |Mixed |Obstructive)*Hypopnea"
+               }
+
+        for k, v in map.iteritems():
+            pattern = "<ScoredEvent><Name>" + v + ".+?<\/ScoredEvent>"
+
+            re_se = re.compile(pattern)
+
+            with open(xml_path + '\\' + fname, 'r') as f:
+                data = f.read()
+                for se in re.finditer(re_se, data):
+                    event = simple_event_from_xml(se.group(0))  # event is a tuple (tstart, tend) in seconds since start of recording
+                    events[k].append(event)
         return events
