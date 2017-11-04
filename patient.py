@@ -171,10 +171,7 @@ class Patient:
     def get_respiratory_events(self, xml_path, fname):
         # Central Apnea, Mixed Apena, Obstructive Apnea
         # Obstructive Hypopnea, Central Hypopnea, Mixed Hypopnea, Hypopnea
-        events = {'ca': [],
-                  'ma': [],
-                  'oa': [],
-                  'h': []}
+        events = {}
         map = {'ca': "Central Apnea",
                'ma': "Mixed Apnea",
                'oa': "Obstructive Apnea",
@@ -182,6 +179,7 @@ class Patient:
                }
 
         for k, v in map.iteritems():
+            events[k] = []
             pattern = "<ScoredEvent><Name>" + v + ".+?<\/ScoredEvent>"
 
             re_se = re.compile(pattern)
