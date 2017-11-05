@@ -59,6 +59,13 @@ class Patient:
         else:
             return True
 
+    def get_sleep_stage(self, when):
+        if isinstance(when, datetime.datetime):
+            epoch = self.walltime_to_epoch(when)
+        else:
+            epoch = when
+        return self.sleep_list[epoch - 1]
+
     def get_control_periods(self, ctrl_window, ctrl_period_width):
         # find intervals of sleep that are at least ctrl_period_width
 
