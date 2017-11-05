@@ -209,3 +209,33 @@ def is_associated(event1, event2, constraint=(None,0.5), fixedOrder=False):
         else:
             return False
 
+def any_during(event_list, period):
+    if isinstance(event_list, dict):
+        a = []
+        for k, v in event_list.iteritems():
+            for event in v:
+                a.append(event)
+        event_list = a
+
+    for event in event_list:
+        if event[0] >= period[0] and event[0] <= period[1]:
+            return True
+        if event[1] >= period[0] and event[1] <= period[1]:
+            return True
+        if period[0] >= event[0] and period[0] <= event[1]:
+            return True
+    return False
+
+def count_during(event_list, period):
+    if isinstance(event_list, dict):
+        a = []
+        for k, v in event_list.iteritems():
+            for event in v:
+                a.append(event)
+        event_list = a
+
+    n = 0
+    for event in event_list:
+        if any_during([event], period):
+            n += 1
+    return n
