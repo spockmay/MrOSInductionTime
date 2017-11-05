@@ -210,11 +210,12 @@ class Patient:
                     plma.append(plm)
 
         plm_resp = {} # plm associated with respiratory events
-        for plm in self.plm_events:
-            for k in self.resp_events.keys():
-                plm_resp[k] = []
-                for event in self.resp_events[k]:
-                    if is_associated(plm, event):
+        for k in self.resp_events.keys():
+            plm_resp[k] = []
+            for event in self.resp_events[k]:
+                for plm in self.plm_events:
+                    if is_associated(event, plm, constraint=(-3.0, 3.0), fixedOrder=True):
                         plm_resp[k].append(plm)
+                        continue  # there can be only 1 PLM associated with a given event
 
         return plma, plm_resp

@@ -164,18 +164,48 @@ def simple_event_from_xml(xml):
     event = (tstart, tend)
     return event
 
-def is_associated(event1, event2, dt=0.5):
+def is_associated(event1, event2, constraint=(None,0.5), fixedOrder=False):
+    # this method is looking to provide a general test of whether 2 events are associated
+    # if fixedOrder is False, then the order in which the events are provided doesn't matter
+    # and they will be rearranged so that the earliest starting event is e1.
+    # If fixedOrder is True, the order is unchanged.
+    #
+    # the constraint is a tuple of seconds that generate the conditions for association.
+    # condition 1: e2[start] - e1[end] > constraint[0]
+    # condition 2: e2[start] - e1[end] < constraint[1]
+    # If any element of constraint is None, then that condition will evaluate to True
+    # the events are associated iff both conditions are True
+    #
     # events can be associated to eachother iff the condition below is true:
     #  the start of later event is strictly < 0.5 seconds of the end of the first event
-    if event1[0] < event2[0]:
+    if fixedOrder:
         e1 = event1
         e2 = event2
+        if e1[0] > e2[0]:
+            return False
     else:
-        e1 = event2
-        e2 = event1
+        if event1[0] < event2[0]:
+            e1 = event1
+            e2 = event2
+        else:
+            e1 = event2
+            e2 = event1
 
-    if e2[0] - e1[1] < datetime.timedelta(seconds=dt):
-        return True
+    # condition 1
+    if constraint[0] is None:
+        c1 = True
     else:
-        return False
+        if e2[0] - e1[1] > datetime.timedelta(seconds=constraint[0]):
+            c1 = True
+        else:
+            return False
+
+    # condition 2
+    if constraint[1] is None:
+        return True # this is basically return c1 and True which is return c1 which has to be True since we are here
+    else:
+        if e2[0] - e1[1] < datetime.timedelta(seconds=constraint[1]):
+            return True
+        else:
+            return False
 
