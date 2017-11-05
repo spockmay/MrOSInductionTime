@@ -1,7 +1,7 @@
 import datetime
 import re
 
-from helper import get_sleep_stages, make_after, plm_from_xml, simple_event_from_xml
+from helper import get_sleep_stages, make_after, plm_from_xml, simple_event_from_xml, is_associated
 
 
 class Patient:
@@ -14,6 +14,9 @@ class Patient:
     plm_events = None       # list of tuples of datetimes
     arousal_events = None   # list of tuples of datetimes
     resp_events = None      # dictionary of list of tuples of datetimes
+
+    plma_events = None      # list of PLMs associated with Arousals
+    plm_resp_events = None  # list of PLMs associated with Resp. Events
 
     def __init__(self, id, study_times, start_time, nsvt_times, xml_path):
         self.id = id
@@ -32,6 +35,9 @@ class Patient:
         # get the arousal events
         self.arousal_events = self.get_arousals(xml_path, fname)
         self.resp_events = self.get_respiratory_events(xml_path, fname)
+
+        # find PLMs that are associated with other events
+        self.plma_events, self.plm_resp_events = self.find_plm_associations()
 
     def walltime_to_epoch(self, time):
         dt = time - self.start_time
@@ -188,5 +194,27 @@ class Patient:
                 data = f.read()
                 for se in re.finditer(re_se, data):
                     event = simple_event_from_xml(se.group(0))  # event is a tuple (tstart, tend) in seconds since start of recording
-                    events[k].append(event)
+
+                    # convert the event to wall time
+                    ts = self.start_time + datetime.timedelta(seconds=event[0])
+                    te = self.start_time + datetime.timedelta(seconds=event[1])
+
+                    events[k].append((ts, te))
         return events
+
+    def find_plm_associations(self):
+        plma = [] # plm associated with arousals
+        for plm in self.plm_events:
+            for arousal in self.arousal_events:
+                if is_associated(plm, arousal):
+                    plma.append(plm)
+
+        plm_resp = {} # plm associated with respiratory events
+        for plm in self.plm_events:
+            for k in self.resp_events.keys():
+                plm_resp[k] = []
+                for event in self.resp_events[k]:
+                    if is_associated(plm, event):
+                        plm_resp[k].append(plm)
+
+        return plma, plm_resp

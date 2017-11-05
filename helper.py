@@ -163,3 +163,19 @@ def simple_event_from_xml(xml):
 
     event = (tstart, tend)
     return event
+
+def is_associated(event1, event2, dt=0.5):
+    # events can be associated to eachother iff the condition below is true:
+    #  the start of later event is strictly < 0.5 seconds of the end of the first event
+    if event1[0] < event2[0]:
+        e1 = event1
+        e2 = event2
+    else:
+        e1 = event2
+        e2 = event1
+
+    if e2[0] - e1[1] < datetime.timedelta(seconds=dt):
+        return True
+    else:
+        return False
+
