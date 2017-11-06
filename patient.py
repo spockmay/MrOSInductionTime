@@ -18,6 +18,8 @@ class Patient:
     plma_events = None      # list of PLMs associated with Arousals
     plm_resp_events = None  # list of PLMs associated with Resp. Events
 
+    arousal_resp = None     # list of Arousals associated with Resp Events
+
     def __init__(self, id, study_times, start_time, nsvt_times, xml_path):
         self.id = id
         self.start_time = start_time
@@ -36,8 +38,9 @@ class Patient:
         self.arousal_events = self.get_arousals(xml_path, fname)
         self.resp_events = self.get_respiratory_events(xml_path, fname)
 
-        # find PLMs that are associated with other events
+        # find associations with other events
         self.plma_events, self.plm_resp_events = self.find_plm_associations()
+        self.arousal_resp = self.find_arousal_association()
 
     def walltime_to_epoch(self, time):
         dt = time - self.start_time
@@ -221,8 +224,24 @@ class Patient:
             plm_resp[k] = []
             for event in self.resp_events[k]:
                 for plm in self.plm_events:
-                    if is_associated(event, plm, constraint=(-3.0, 3.0), fixedOrder=True):
+                    if is_associated(event, plm, constraint=(-0.5, 0.5), fixedOrder=True):
                         plm_resp[k].append(plm)
                         continue  # there can be only 1 PLM associated with a given event
 
         return plma, plm_resp
+
+    def find_arousal_association(self):
+        # We don't care what kind of resp events...so squish them
+        a = []
+        for k, v in self.resp_events.iteritems():
+            for event in v:
+                a.append(event)
+        resp_events = a
+
+        arousal_resp = [] # arousals associated with Resp events
+        for arousal in self.arousal_events:
+            for resp in resp_events:
+                if is_associated(resp, arousal, constraint=(-3.0, 3.0), fixedOrder=True):
+                    arousal_resp.append(arousal)
+                    continue # there can be only 1 Resp Event associated with an arousal
+        return arousal_resp
