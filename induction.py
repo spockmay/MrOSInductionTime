@@ -9,7 +9,9 @@ from helper import get_sleep_times, \
     get_NSVT_times, \
     chunk_times, \
     get_control_windows,\
-    get_study_start_time
+    get_study_start_time,\
+    any_during,\
+    count_during
 
 ROOT_DIR = 'F:\\MrOS PLM case-cross\\other'
 DATA_DIR = ROOT_DIR + '\\may-hrv'
@@ -18,13 +20,15 @@ XML_DIRECTORY = DATA_DIR + '\\edfs'
 MSACCESS_DIRECTORY = DATA_DIR + '\\hrv'
 SOMTE_DIRECTORY = DATA_DIR + '\\shhs1-csv'
 
+OUTPUT_FILE = '\\results.csv'
+
 DT_CONTROL_WINDOW  = 2.5*60 # seconds - width of control window
 DT_INTERVAL        = 5*60   # seconds - intervals from NSVT onset
 DT_CONTROL_PERIOD  = 30     # seconds - width of the control periods
 DT_HAZARD_OFFSET   = 0      # seconds - difference between the end of the hazard period and the NSVT event
 
 N_CTRL_PERIODS     = 3      # number of control periods to downselect to.  Set to None for no downselect
-MIN_N_CTRL_PERIODS = 0      # minimum number of control periods to consider for inclusion
+MIN_N_CTRL_PERIODS = 1      # minimum number of control periods to consider for inclusion
 
 random.seed(123456)
 
@@ -39,12 +43,16 @@ patients = []
 for pt in pt_ids:
     patients.append(Patient(pt, sleep_times[pt], study_times[pt], nsvt_times[pt], XML_DIRECTORY))
 
+# create output file and write header
+fout = open(RESULTS_DIR + OUTPUT_FILE, 'w')
+fout.writelines("ID,patient_event_number,case_control,period_start_time,sleep_stage,PLMS_event,PLMS_type1,PLMS_type2,PLMS_type3,PLMS_type4,PLMS_type5,resp_event,resp_type1,resp_type2,arousal,PLMS_assos,resp_assos,PLMSresp,RESPplms,NSVT_start,NSVT_duration,NSVT_sstage,segment_duration,segment_start,segment_end\n")
+out_format = "{},"*24 + "{}\n"
+
 # Do the actual work here...
 # for each patient
-i = 0
-n_nsvt = 0
 for pt in patients:
-#    print pt.id
+    print pt.id
+    n_nsvt = 0
 
     # generate approx 30 minute partitions from [sleep onset, lights on]
     dt_chunk = create_even_chunks(pt.sleep_onset,pt.lights_on)
@@ -86,11 +94,66 @@ for pt in patients:
         # determine the hazard period for the NSVT
         hazard_period = pt.get_hazard_period(nsvt, DT_CONTROL_PERIOD, DT_HAZARD_OFFSET)
 
-        # silly output code for v&v
-        print pt.id, pt.walltime_to_epoch(nsvt), len(ctrl_periods), len(ctrl_windows)
-        if len(ctrl_periods) > 2:
-            i += 1
+        # update counter
         n_nsvt += 1
 
-print i
-print n_nsvt
+        # prepare output
+        outline = []
+        outline.append(out_format.format(pt.id,      # pt ID
+                                         n_nsvt,     # NSVT number for this patient
+                                         1,          # this is for the HP
+                                         hazard_period[0].strftime('%H:%M:%S'),     # start of HP
+                                         pt.get_sleep_stage(hazard_period[0]),      # sleep stage at start of HP
+                                         1 if any_during(pt.plm_events, hazard_period) else 0,  # PLMS_event
+                                         "?",
+                                         "?",
+                                         "?",
+                                         "?",
+                                         "?",
+                                         1 if any_during(pt.resp_events, hazard_period) else 0,
+                                         "?",       # resp_type1
+                                         "?",       # resp_type2
+                                         count_during(pt.arousal_events, hazard_period),    # number of arousals during HP
+                                         "?",       # number of arousals associated to PLM during HP
+                                         "?",       # resp_assos - number of resp associated arousals
+                                         count_during(pt.plm_resp_events, hazard_period),    # number of resp-associated PLM
+                                         "?",
+                                         nsvt.strftime('%H:%M:%S'),
+                                         "?",      # duration of NSVT, sec
+                                         pt.get_sleep_stage(nsvt),
+                                         (chunk[1] - chunk[0]).seconds / 60.0,
+                                         chunk[0].strftime('%H:%M:%S'),
+                                         chunk[1].strftime('%H:%M:%S')
+                                         ))
+
+        for ctrl in ctrl_periods:
+            ctrl = ctrl[0]
+            outline.append(out_format.format(pt.id,  # pt ID
+                                             n_nsvt,  # NSVT number for this patient
+                                             0,  # this is for the control periods
+                                             ctrl[0].strftime('%H:%M:%S'),  # start of CP
+                                             pt.get_sleep_stage(ctrl[0]),  # sleep stage at start of HP
+                                             1 if any_during(pt.plm_events, ctrl) else 0,
+                                             "?",
+                                             "?",
+                                             "?",
+                                             "?",
+                                             "?",
+                                             1 if any_during(pt.resp_events, ctrl) else 0,
+                                             "?",  # resp_type1
+                                             "?",  # resp_type2
+                                             count_during(pt.arousal_events, ctrl),       # number of arousals during CP
+                                             count_during(pt.plma_events, ctrl),  # number of PLMA during CP
+                                             "?",  # resp_assos - number of resp associated arousals
+                                             count_during(pt.plm_resp_events, ctrl),     # number of resp-associated PLM
+                                             "?",
+                                             nsvt.strftime('%H:%M:%S'),
+                                             "?",  # duration of NSVT, sec
+                                             pt.get_sleep_stage(nsvt),
+                                             (chunk[1] - chunk[0]).seconds / 60.0,
+                                             chunk[0].strftime('%H:%M:%S'),
+                                             chunk[1].strftime('%H:%M:%S')
+                                             ))
+        fout.writelines(outline)
+
+fout.close()
