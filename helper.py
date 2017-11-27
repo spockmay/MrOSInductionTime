@@ -209,13 +209,18 @@ def is_associated(event1, event2, constraint=(None,0.5), fixedOrder=False):
         else:
             return False
 
-def any_during(event_list, period):
+def dict_to_list(event_list, dict):
     if isinstance(event_list, dict):
         a = []
         for k, v in event_list.iteritems():
             for event in v:
                 a.append(event)
-        event_list = a
+        return a
+    else:
+        return event_list
+
+def any_during(event_list, period):
+    event_list = dict_to_list(event_list, dict)
 
     for event in event_list:
         if event[0] >= period[0] and event[0] <= period[1]:
@@ -227,15 +232,43 @@ def any_during(event_list, period):
     return False
 
 def count_during(event_list, period):
-    if isinstance(event_list, dict):
-        a = []
-        for k, v in event_list.iteritems():
-            for event in v:
-                a.append(event)
-        event_list = a
+    event_list = dict_to_list(event_list, dict)
 
     n = 0
     for event in event_list:
         if any_during([event], period):
             n += 1
     return n
+
+def get_during(event_list, period):
+    event_list = dict_to_list(event_list, dict)
+
+    subset = []
+    for event in event_list:
+        if any_during([event], period):
+            subset.append(event)
+    return subset
+
+def plms_type(pt, plm_list, index):
+    if index < len(plm_list):
+        plm = plm_list[index]
+        if plm in pt.plma_events:
+            return 2
+        else:
+            return 1
+    return 0
+
+def resp_type(pt, resp_list, index):
+    if index < len(resp_list):
+        resp = resp_list[index]
+        if resp in pt.resp_events['oa']:
+            return 1
+        elif resp in pt.resp_events['h']:
+            return 2
+        elif resp in pt.resp_events['ca']:
+            return 3
+        elif resp in pt.resp_events['ma']:
+            return 4
+        else:
+            return -999
+    return 0

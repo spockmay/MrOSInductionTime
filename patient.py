@@ -19,6 +19,7 @@ class Patient:
     plm_resp_events = None  # list of PLMs associated with Resp. Events
 
     arousal_resp = None     # list of Arousals associated with Resp Events
+    arousal_plm = None      # list of Arousals associated with PLM Events
 
     def __init__(self, id, study_times, start_time, nsvt_times, xml_path):
         self.id = id
@@ -41,6 +42,7 @@ class Patient:
         # find associations with other events
         self.plma_events, self.plm_resp_events = self.find_plm_associations()
         self.arousal_resp = self.find_arousal_association()
+        self.arousal_plm = self.find_arousal_plm_assoc()
 
     def walltime_to_epoch(self, time):
         dt = time - self.start_time
@@ -245,3 +247,12 @@ class Patient:
                     arousal_resp.append(arousal)
                     continue # there can be only 1 Resp Event associated with an arousal
         return arousal_resp
+
+    def find_arousal_plm_assoc(self):
+        arousal_plm = [] # arousals associated with plm events
+        for arousal in self.arousal_events:
+            for plm in self.plm_events:
+                if is_associated(plm, arousal, constraint=(-0.5, 0.5), fixedOrder=True):
+                    arousal_plm.append(arousal)
+                    continue # there can be only 1 PLM Event associated with an arousal
+        return arousal_plm
