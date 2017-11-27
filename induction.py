@@ -1,8 +1,5 @@
 import random
 
-from plm import Plm
-from plmseries import PlmSeries
-
 from patient import Patient
 from helper import get_sleep_times, \
     create_even_chunks, \
@@ -98,8 +95,7 @@ for pt in patients:
         n_nsvt += 1
 
         # prepare output
-        outline = []
-        outline.append(out_format.format(pt.id,      # pt ID
+        outline = [out_format.format(pt.id,      # pt ID
                                          n_nsvt,     # NSVT number for this patient
                                          1,          # this is for the HP
                                          hazard_period[0].strftime('%H:%M:%S'),     # start of HP
@@ -124,7 +120,7 @@ for pt in patients:
                                          (chunk[1] - chunk[0]).seconds / 60.0,
                                          chunk[0].strftime('%H:%M:%S'),
                                          chunk[1].strftime('%H:%M:%S')
-                                         ))
+                                         )]
 
         for ctrl in ctrl_periods:
             ctrl = ctrl[0]
@@ -143,7 +139,7 @@ for pt in patients:
                                              "?",  # resp_type1
                                              "?",  # resp_type2
                                              count_during(pt.arousal_events, ctrl),       # number of arousals during CP
-                                             count_during(pt.plma_events, ctrl),  # number of PLMA during CP
+                                             "?",  # number of arousals associated with PLM during CP
                                              "?",  # resp_assos - number of resp associated arousals
                                              count_during(pt.plm_resp_events, ctrl),     # number of resp-associated PLM
                                              "?",
