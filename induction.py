@@ -120,7 +120,7 @@ for pt in patients:
                                      resp_type(pt, resp, 0),       # resp_type1
                                      resp_type(pt, resp, 1),       # resp_type2
                                      count_during(pt.arousal_events, hazard_period),    # number of arousals during HP
-                                     count_during(pt.plma_events, hazard_period),       # number of arousals associated to PLM during HP
+                                     count_during(pt.arousal_plm, hazard_period),       # number of arousals associated to PLM during HP
                                      count_during(pt.arousal_resp, hazard_period),       # resp_assos - number of resp associated arousals
                                      "?",               # min saturation
                                      nsvt.strftime('%H:%M:%S'),
@@ -153,7 +153,7 @@ for pt in patients:
                                              resp_type(pt, resp, 0),  # resp_type1
                                              resp_type(pt, resp, 1),  # resp_type2
                                              count_during(pt.arousal_events, ctrl),       # number of arousals during CP
-                                             count_during(pt.plma_events, ctrl),  # number of arousals associated with PLM during CP
+                                             count_during(pt.arousal_plm, ctrl),  # number of arousals associated with PLM during CP
                                              count_during(pt.arousal_resp, ctrl),  # resp_assos - number of resp associated arousals
                                              "?",  # min saturation
                                              nsvt.strftime('%H:%M:%S'),
