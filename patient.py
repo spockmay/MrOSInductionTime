@@ -2,7 +2,7 @@ import datetime
 import re
 
 from helper import get_sleep_stages, make_after, plm_from_xml, simple_event_from_xml, is_associated
-
+from edf import EDF
 
 class Patient:
     id = ""
@@ -20,6 +20,8 @@ class Patient:
 
     arousal_resp = None     # list of Arousals associated with Resp Events
     arousal_plm = None      # list of Arousals associated with PLM Events
+
+    o2_sat = None           # oxygen saturation - from EDF file
 
     def __init__(self, id, study_times, start_time, nsvt_times, xml_path):
         self.id = id
@@ -43,6 +45,9 @@ class Patient:
         self.plma_events, self.plm_resp_events = self.find_plm_associations()
         self.arousal_resp = self.find_arousal_association()
         self.arousal_plm = self.find_arousal_plm_assoc()
+
+        # extract the O2 saturation from the EDF file
+        self.o2_sat = self.extract_O2_sat(xml_path, self.id.lower())
 
     def walltime_to_epoch(self, time):
         dt = time - self.start_time
@@ -256,3 +261,15 @@ class Patient:
                     arousal_plm.append(arousal)
                     continue # there can be only 1 PLM Event associated with an arousal
         return arousal_plm
+
+    def extract_O2_sat(self, edf_path, fname):
+        a = EDF(edf_path + '\\' + fname + '.edf')
+        if 'sao2' not in a.channels:
+            print "sao2 channel not found in %s.edf" % fname
+            return None
+
+        o2 = a.channel_to_tuples('sao2', self.start_time)    # o2 is a list of tuples (t, value)
+
+        return o2
+
+
