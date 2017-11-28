@@ -45,11 +45,12 @@ for pt in pt_ids:
 
 # create output file and write header
 fout = open(RESULTS_DIR + OUTPUT_FILE, 'w')
-fout.writelines("ID,patient_event_number,segment_event_number,case_control,epoch_number,period_start_time,sleep_stage,PLMS_event,PLMS_type1,PLMS_type2,PLMS_type3,PLMS_type4,PLMS_type5,resp_event,resp_type1,resp_type2,arousal,PLMS_assos,resp_assos,NSVT_start,NSVT_duration,NSVT_sstage,segment_duration,segment_start,segment_end\n")
-out_format = "{},"*24 + "{}\n"
+fout.writelines("stratum,ID,patient_event_number,segment_event_number,case_control,epoch_number,period_start_time,sleep_stage,PLMS_event,PLMS_type1,PLMS_type2,PLMS_type3,PLMS_type4,PLMS_type5,resp_event,resp_type1,resp_type2,arousal,PLMS_assos,resp_assos,min_sat,NSVT_start,NSVT_duration,NSVT_sstage,segment_duration,segment_start,segment_end\n")
+out_format = "{},"*26 + "{}\n"
 
 # Do the actual work here...
 # for each patient
+stratum = 0
 for pt in patients:
     print pt.id
     n_nsvt = 0
@@ -94,13 +95,15 @@ for pt in patients:
         # determine the hazard period for the NSVT
         hazard_period = pt.get_hazard_period(nsvt, DT_CONTROL_PERIOD, DT_HAZARD_OFFSET)
 
-        # update counter
+        # update counters
         n_nsvt += 1
+        stratum += 1
 
         # prepare output
         plms = get_during(pt.plm_events, hazard_period)
         resp = get_during(pt.resp_events, hazard_period)
-        outline = [out_format.format(pt.id,      # pt ID
+        outline = [out_format.format(stratum,    # stratum
+                                     pt.id,      # pt ID
                                      n_nsvt,     # NSVT number for this patient
                                      "?",        # segment event number
                                      1,          # this is for the HP
@@ -119,8 +122,9 @@ for pt in patients:
                                      count_during(pt.arousal_events, hazard_period),    # number of arousals during HP
                                      count_during(pt.plma_events, hazard_period),       # number of arousals associated to PLM during HP
                                      count_during(pt.arousal_resp, hazard_period),       # resp_assos - number of resp associated arousals
+                                     "?",               # min saturation
                                      nsvt.strftime('%H:%M:%S'),
-                                     "?",      # duration of NSVT, sec
+                                     "",      # duration of NSVT, sec
                                      pt.get_sleep_stage(nsvt),
                                      (chunk[1] - chunk[0]).seconds / 60.0,
                                      chunk[0].strftime('%H:%M:%S'),
@@ -131,7 +135,8 @@ for pt in patients:
             ctrl = ctrl[0]
             plms = get_during(pt.plm_events, ctrl)
             resp = get_during(pt.resp_events, ctrl)
-            outline.append(out_format.format(pt.id,  # pt ID
+            outline.append(out_format.format(stratum,    # stratum
+                                             pt.id,  # pt ID
                                              n_nsvt,  # NSVT number for this patient
                                              "?",        # segment event number
                                              0,  # this is for the control periods
@@ -150,8 +155,9 @@ for pt in patients:
                                              count_during(pt.arousal_events, ctrl),       # number of arousals during CP
                                              count_during(pt.plma_events, ctrl),  # number of arousals associated with PLM during CP
                                              count_during(pt.arousal_resp, ctrl),  # resp_assos - number of resp associated arousals
+                                             "?",  # min saturation
                                              nsvt.strftime('%H:%M:%S'),
-                                             "?",  # duration of NSVT, sec
+                                             "",  # duration of NSVT, sec
                                              pt.get_sleep_stage(nsvt),
                                              (chunk[1] - chunk[0]).seconds / 60.0,
                                              chunk[0].strftime('%H:%M:%S'),
