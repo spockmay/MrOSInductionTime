@@ -122,7 +122,7 @@ for pt in patients:
                                      count_during(pt.arousal_events, hazard_period),    # number of arousals during HP
                                      count_during(pt.arousal_plm, hazard_period),       # number of arousals associated to PLM during HP
                                      count_during(pt.arousal_resp, hazard_period),       # resp_assos - number of resp associated arousals
-                                     "?",               # min saturation
+                                     pt.get_min_O2sat(hazard_period),               # min saturation
                                      nsvt.strftime('%H:%M:%S'),
                                      "",      # duration of NSVT, sec
                                      pt.get_sleep_stage(nsvt),
@@ -155,7 +155,7 @@ for pt in patients:
                                              count_during(pt.arousal_events, ctrl),       # number of arousals during CP
                                              count_during(pt.arousal_plm, ctrl),  # number of arousals associated with PLM during CP
                                              count_during(pt.arousal_resp, ctrl),  # resp_assos - number of resp associated arousals
-                                             "?",  # min saturation
+                                             pt.get_min_O2sat(ctrl),  # min saturation
                                              nsvt.strftime('%H:%M:%S'),
                                              "",  # duration of NSVT, sec
                                              pt.get_sleep_stage(nsvt),

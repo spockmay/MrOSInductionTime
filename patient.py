@@ -272,4 +272,12 @@ class Patient:
 
         return o2
 
+    def get_min_O2sat(self, period):
+        min_sat = float('inf')
+
+        for t in self.o2_sat:
+            if t[0] >= period[0] and t[0] < period[1]:
+                if t[1] < min_sat and t[1] > 20.0:      # for some reason getting values = 0.005 and lower...
+                    min_sat = t[1]
+        return min_sat
 
