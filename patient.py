@@ -1,8 +1,8 @@
 import datetime
 import re
 
-from helper import get_sleep_stages, make_after, plm_from_xml, simple_event_from_xml, is_associated
-
+from helper import get_sleep_stages, make_after, plm_from_xml, simple_event_from_xml, is_associated, plm_arousal_associated
+from edf import EDF
 
 class Patient:
     id = ""
@@ -19,6 +19,9 @@ class Patient:
     plm_resp_events = None  # list of PLMs associated with Resp. Events
 
     arousal_resp = None     # list of Arousals associated with Resp Events
+    arousal_plm = None      # list of Arousals associated with PLM Events
+
+    o2_sat = None           # oxygen saturation - from EDF file
 
     def __init__(self, id, study_times, start_time, nsvt_times, xml_path):
         self.id = id
@@ -41,6 +44,10 @@ class Patient:
         # find associations with other events
         self.plma_events, self.plm_resp_events = self.find_plm_associations()
         self.arousal_resp = self.find_arousal_association()
+        self.arousal_plm = self.find_arousal_plm_assoc()
+
+        # extract the O2 saturation from the EDF file
+        self.o2_sat = self.extract_O2_sat(xml_path, self.id.lower())
 
     def walltime_to_epoch(self, time):
         dt = time - self.start_time
@@ -245,3 +252,32 @@ class Patient:
                     arousal_resp.append(arousal)
                     continue # there can be only 1 Resp Event associated with an arousal
         return arousal_resp
+
+    def find_arousal_plm_assoc(self):
+        arousal_plm = [] # arousals associated with plm events
+        for arousal in self.arousal_events:
+            for plm in self.plm_events:
+                if plm_arousal_associated(plm, arousal, constraint=(-0.5, 0.5)):
+                    arousal_plm.append(arousal)
+                    continue # there can be only 1 PLM Event associated with an arousal
+        return arousal_plm
+
+    def extract_O2_sat(self, edf_path, fname):
+        a = EDF(edf_path + '\\' + fname + '.edf')
+        if 'sao2' not in a.channels:
+            print "sao2 channel not found in %s.edf" % fname
+            return None
+
+        o2 = a.channel_to_tuples('sao2', self.start_time)    # o2 is a list of tuples (t, value)
+
+        return o2
+
+    def get_min_O2sat(self, period):
+        min_sat = float('inf')
+
+        for t in self.o2_sat:
+            if t[0] >= period[0] and t[0] < period[1]:
+                if t[1] < min_sat and t[1] > 20.0:      # for some reason getting values = 0.005 and lower...
+                    min_sat = t[1]
+        return min_sat
+
