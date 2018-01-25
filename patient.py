@@ -1,7 +1,7 @@
 import datetime
 import re
 
-from helper import get_sleep_stages, make_after, plm_from_xml, simple_event_from_xml, is_associated, plm_arousal_associated
+from helper import get_sleep_stages, make_after, plm_from_xml, simple_event_from_xml, is_associated, plm_arousal_associated, remove_close_events
 from edf import EDF
 
 class Patient:
@@ -28,7 +28,7 @@ class Patient:
         self.start_time = start_time
         self.sleep_onset = make_after(self.start_time, study_times['sleep_onset'])
         self.lights_on = make_after(self.sleep_onset, study_times['lights_on'])
-        self.nsvt_times = nsvt_times
+        self.nsvt_times = remove_close_events(nsvt_times, 5*60)
 
         # extract the sleeping stages (based on epoch) from the XML file for the patient
         fname = self.id.lower() + '.edf.XML'

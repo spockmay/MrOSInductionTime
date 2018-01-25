@@ -284,3 +284,11 @@ def resp_type(pt, resp_list, index):
         else:
             return -999
     return 0
+
+def remove_close_events(events, min_sec_between):
+    new_list = [events[0]]
+    for i in range(1, len(events)):
+        if events[i] - events[i-1] >= datetime.timedelta(seconds=min_sec_between):
+            new_list.append(events[i])
+    return new_list
+
