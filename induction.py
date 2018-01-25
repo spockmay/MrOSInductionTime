@@ -34,12 +34,15 @@ random.seed(123456)
 
 # setup stuff
 sleep_times = get_sleep_times(RESULTS_DIR + '\\Sleep_period_lights_on_off.csv')
-nsvt_times = get_NSVT_times(RESULTS_DIR + '\\NSVTtimes_removeAF_clean.csv')
-study_times = get_study_start_time(RESULTS_DIR + '\\NSVTtimes_removeAF_clean.csv')
+nsvt_times = get_NSVT_times(RESULTS_DIR + '\\NSVTtimes_allPLMI_clean.csv')
+study_times = get_study_start_time(RESULTS_DIR + '\\NSVTtimes_allPLMI_clean.csv')
 pt_ids = nsvt_times.keys()  # we only need to look at patients with NSVT events
 
 # create an array of Patients
 patients = []
+
+#pt_ids = ['MN2361']
+
 for pt in pt_ids:
     patients.append(Patient(pt, sleep_times[pt], study_times[pt], nsvt_times[pt], XML_DIRECTORY))
 

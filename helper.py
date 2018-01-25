@@ -164,6 +164,18 @@ def simple_event_from_xml(xml):
     event = (tstart, tend)
     return event
 
+def plm_arousal_associated(plm, arousal, constraint=(0,0.5)):
+    # if the time of the arousal +/- the constraint overlaps with any of the plm, then true
+    ts = arousal[0] - abs(datetime.timedelta(seconds=constraint[0]))
+    te = arousal[1] + abs(datetime.timedelta(seconds=constraint[1]))
+
+    if plm[0] <= te and plm[0] >= ts:
+        return True
+    elif plm[1] <= te and plm[1] >= ts:
+        return True
+    else:
+        return False
+
 def is_associated(event1, event2, constraint=(None,0.5), fixedOrder=False):
     # this method is looking to provide a general test of whether 2 events are associated
     # if fixedOrder is False, then the order in which the events are provided doesn't matter

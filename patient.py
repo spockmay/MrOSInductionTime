@@ -1,7 +1,7 @@
 import datetime
 import re
 
-from helper import get_sleep_stages, make_after, plm_from_xml, simple_event_from_xml, is_associated
+from helper import get_sleep_stages, make_after, plm_from_xml, simple_event_from_xml, is_associated, plm_arousal_associated
 from edf import EDF
 
 class Patient:
@@ -257,7 +257,7 @@ class Patient:
         arousal_plm = [] # arousals associated with plm events
         for arousal in self.arousal_events:
             for plm in self.plm_events:
-                if is_associated(plm, arousal, constraint=(-0.5, 0.5), fixedOrder=True):
+                if plm_arousal_associated(plm, arousal, constraint=(-0.5, 0.5)):
                     arousal_plm.append(arousal)
                     continue # there can be only 1 PLM Event associated with an arousal
         return arousal_plm
