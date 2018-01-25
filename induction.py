@@ -41,8 +41,6 @@ pt_ids = nsvt_times.keys()  # we only need to look at patients with NSVT events
 # create an array of Patients
 patients = []
 
-#pt_ids = ['MN2361']
-
 for pt in pt_ids:
     patients.append(Patient(pt, sleep_times[pt], study_times[pt], nsvt_times[pt], XML_DIRECTORY))
 
