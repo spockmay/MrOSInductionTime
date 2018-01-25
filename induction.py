@@ -46,7 +46,7 @@ for pt in pt_ids:
 
 # create output file and write header
 fout = open(RESULTS_DIR + OUTPUT_FILE, 'w')
-fout.writelines("stratum,ID,patient_event_number,segment_event_number,case_control,epoch_number,period_start_time,sleep_stage,PLMS_event,PLMS_type1,PLMS_type2,PLMS_type3,PLMS_type4,PLMS_type5,resp_event,resp_type1,resp_type2,arousal,PLMS_assos,resp_assos,min_sat,NSVT_start,NSVT_duration,NSVT_sstage,segment_duration,segment_start,segment_end\n")
+fout.writelines("stratum,ID,patient_event_number,segment_event_number,case_control,epoch_number,period_start_time,sleep_stage,PLMS_event,PLMS_type1,PLMS_type2,PLMS_type3,PLMS_type4,PLMS_type5,resp_event,resp_type1,resp_type2,arousal,PLMS_assos,resp_assos,minsat,NSVT_start,NSVT_duration,NSVT_sstage,segment_duration,segment_start,segment_end\n")
 out_format = "{},"*26 + "{}\n"
 
 # Do the actual work here...
