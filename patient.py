@@ -259,7 +259,7 @@ class Patient:
             for plm in self.plm_events:
                 if plm_arousal_associated(plm, arousal, constraint=(-0.5, 0.5)):
                     arousal_plm.append(arousal)
-                    continue # there can be only 1 PLM Event associated with an arousal
+                    break # there can be only 1 PLM Event associated with an arousal
         return arousal_plm
 
     def extract_O2_sat(self, edf_path, fname):
