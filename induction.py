@@ -136,24 +136,24 @@ for pt in patients:
                                      hazard_period[0].strftime('%H:%M:%S'),     # start of HP
                                      pt.get_sleep_stage(nsvt),      # sleep stage at start of NSVT
                                      count_during(pt.plm_events, hazard_period),  # number of PLMS events during period
-                                     0,  # number of PLMS with no arousals
-                                     0,  # number of PLMS associated with arousals
-                                     0,  # number of respiratory-associated LIMB MOVEMENT/PLMS [-0.5, 0.5] sec
-                                     0,  # number of respiratory-associated LIMB MOVEMENT/PLMS [-2.5, 2.5]sec
+                                     "?",  # number of PLMS with no arousals
+                                     "?",  # number of PLMS associated with arousals
+                                     "?",  # number of respiratory-associated LIMB MOVEMENT/PLMS [-0.5, 0.5] sec
+                                     "?",  # number of respiratory-associated LIMB MOVEMENT/PLMS [-2.5, 2.5]sec
                                      count_during(pt.resp_events, hazard_period),  # number of resp. events
-                                     0,  # number of apneas
-                                     0,  # number of hypopneas
-                                     0,  # number of PLMS-associated RESPIRATORY EVENT [-0.5, 0.5] sec
-                                     0,  # number of PLMS-associated RESPIRATORY EVENT [-2.5, 2.5] sec
+                                     "?",  # number of apneas
+                                     "?",  # number of hypopneas
+                                     "?",  # number of PLMS-associated RESPIRATORY EVENT [-0.5, 0.5] sec
+                                     "?",  # number of PLMS-associated RESPIRATORY EVENT [-2.5, 2.5] sec
                                      pt.get_min_O2sat(hazard_period),  # min saturation
                                      count_during(pt.arousal_events, hazard_period),  # number of arousals during CP
                                      count_during(pt.arousal_resp, hazard_period), # resp_assos - number of resp associated arousals
                                      count_during(pt.arousal_plm, hazard_period),  # number of arousals associated to PLM during HP
-                                     0,  # number of arousals starting after or at same time as associated PLMS
-                                     0,  # number of arousals starting before assocaited PLMS
+                                     "?",  # number of arousals starting after or at same time as associated PLMS
+                                     "?",  # number of arousals starting before assocaited PLMS
                                      nsvt.strftime('%H:%M:%S'),
-                                     0,      # duration of NSVT, sec
-                                     0,  # beats in arythmia
+                                     "?",      # duration of NSVT, sec
+                                     "?",  # beats in arythmia
                                      pt.get_sleep_stage(nsvt),
                                      (chunk[1] - chunk[0]).seconds / 60.0,
                                      chunk[0].strftime('%H:%M:%S')
@@ -169,24 +169,24 @@ for pt in patients:
                                              ctrl[0].strftime('%H:%M:%S'),  # start of CP
                                              pt.get_sleep_stage(ctrl[0]),  # sleep stage at start of CP
                                              count_during(pt.plm_events, ctrl),  # number of PLMS events in period
-                                             0, # number of PLMS with no arousals
-                                             0, # number of PLMS associated with arousals
-                                             0, # number of respiratory-associated LIMB MOVEMENT/PLMS [-0.5, 0.5] sec
-                                             0, # number of respiratory-associated LIMB MOVEMENT/PLMS [-2.5, 2.5]sec
+                                             "?", # number of PLMS with no arousals
+                                             "?", # number of PLMS associated with arousals
+                                             "?", # number of respiratory-associated LIMB MOVEMENT/PLMS [-0.5, 0.5] sec
+                                             "?", # number of respiratory-associated LIMB MOVEMENT/PLMS [-2.5, 2.5]sec
                                              count_during(pt.resp_events, ctrl), # number of resp. events
-                                             0, # number of apneas
-                                             0, # number of hypopneas
-                                             0, # number of PLMS-associated RESPIRATORY EVENT [-0.5, 0.5] sec
-                                             0,  # number of PLMS-associated RESPIRATORY EVENT [-2.5, 2.5] sec
+                                             "?", # number of apneas
+                                             "?", # number of hypopneas
+                                             "?", # number of PLMS-associated RESPIRATORY EVENT [-0.5, 0.5] sec
+                                             "?",  # number of PLMS-associated RESPIRATORY EVENT [-2.5, 2.5] sec
                                              pt.get_min_O2sat(ctrl),  # min saturation
                                              count_during(pt.arousal_events, ctrl),  # number of arousals during CP
                                              count_during(pt.arousal_resp, ctrl),   # resp_assos - number of resp associated arousals
                                              count_during(pt.arousal_plm, ctrl),  # number of arousals associated with PLM during CP
-                                             0, # number of arousals starting after or at same time as associated PLMS
-                                             0, # number of arousals starting before assocaited PLMS
+                                             "?", # number of arousals starting after or at same time as associated PLMS
+                                             "?", # number of arousals starting before assocaited PLMS
                                              nsvt.strftime('%H:%M:%S'),
-                                             0,  # duration of NSVT, sec
-                                             0, # beats in arythmia
+                                             "?",  # duration of NSVT, sec
+                                             "?", # beats in arythmia
                                              pt.get_sleep_stage(nsvt), # sleep stage of epoch during nsvt
                                              (chunk[1] - chunk[0]).seconds / 60.0,
                                              chunk[0].strftime('%H:%M:%S')
