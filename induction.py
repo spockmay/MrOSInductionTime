@@ -12,6 +12,7 @@ from helper import get_sleep_times, \
     count_during,\
     plms_type,\
     resp_type
+from datetime import datetime
 
 ROOT_DIR = 'F:\\MrOS PLM case-cross\\other'
 DATA_DIR = ROOT_DIR + '\\may-hrv'
@@ -34,12 +35,22 @@ random.seed(123456)
 
 # setup stuff
 sleep_times = get_sleep_times(RESULTS_DIR + '\\Sleep_period_lights_on_off.csv')
-nsvt_times = get_NSVT_times(RESULTS_DIR + '\\NSVTtimes_allPLMI_clean.csv')
-study_times = get_study_start_time(RESULTS_DIR + '\\NSVTtimes_allPLMI_clean.csv')
+nsvt_times = get_NSVT_times(RESULTS_DIR + '\\NSVTtimes_allPLMI_clean_noAF.csv')
+study_times = get_study_start_time(RESULTS_DIR + '\\NSVTtimes_allPLMI_clean_noAF.csv')
 pt_ids = nsvt_times.keys()  # we only need to look at patients with NSVT events
 
 # create an array of Patients
 patients = []
+
+#pt_ids = ['MN2361']
+
+# < OPTIONAL >
+nsvt_clock = []  # list of NSVT event clock time
+nsvt_sleep = []  # list of NSVT event time since sleep onset
+
+pts_events = []
+pts_sleepevents = []
+# < /OPTIONAL >
 
 for pt in pt_ids:
     patients.append(Patient(pt, sleep_times[pt], study_times[pt], nsvt_times[pt], XML_DIRECTORY))
@@ -63,9 +74,19 @@ for pt in patients:
     for nsvt in pt.nsvt_times:
         ctrl_periods = []
 
+        # < OPTIONAL >
+        if pt.id not in pts_events:
+            pts_events.append(pt.id)
+        # < /OPTIONAL >
+
         # ignore any NVST during wake
         if not pt.is_sleep_time(nsvt):
             continue
+
+        # < OPTIONAL >
+        if pt.id not in pts_sleepevents:
+            pts_sleepevents.append(pt.id)
+        # < /OPTIONAL >
 
         # find chunk start and chunk end for this NSVT event
         chunk = chunk_times(nsvt, pt.sleep_onset, pt.lights_on, dt_chunk)
@@ -99,6 +120,12 @@ for pt in patients:
         # update counters
         n_nsvt += 1
         stratum += 1
+
+        # < OPTIONAL >
+        # generate data to drive a histogram of the timing of the NSVT events evaluated
+        nsvt_clock.append((nsvt-datetime(2000,1,1)).total_seconds())  # list of NSVT event clock time
+        nsvt_sleep.append((nsvt-pt.sleep_onset).total_seconds())  # list of NSVT event time since sleep onset
+        # < /OPTIONAL >
 
         # prepare output
         plms = get_during(pt.plm_events, hazard_period)
@@ -167,3 +194,21 @@ for pt in patients:
         fout.writelines(outline)
 
 fout.close()
+
+# < OPTIONAL >
+fout_a = open('nsvt_clock.csv', 'w')
+for i in nsvt_clock:
+    fout_a.write("%s,\n" % i)
+fout_a.close()
+
+fout_a = open('nsvt_sleep.csv', 'w')
+for i in nsvt_sleep:
+    fout_a.write("%s,\n" % i)
+fout_a.close()
+
+print '---------------------------'
+print pts_events
+print '---------------------------'
+print pts_sleepevents
+
+# < /OPTIONAL >
