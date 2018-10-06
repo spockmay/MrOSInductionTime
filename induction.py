@@ -130,14 +130,16 @@ for pt in patients:
         # prepare output
         plms = get_during(pt.plm_events, hazard_period)
         resp = get_during(pt.resp_events, hazard_period)
+        n_plma = count_during(pt.plma_events, hazard_period)
+        n_plm = count_during(pt.plm_events, hazard_period)
         outline = [out_format.format(pt.id,      # pt ID
                                      n_nsvt,     # NSVT number for this patient
                                      1,          # this is for the HP
                                      hazard_period[0].strftime('%H:%M:%S'),     # start of HP
                                      pt.get_sleep_stage(nsvt),      # sleep stage at start of NSVT
-                                     count_during(pt.plm_events, hazard_period),  # number of PLMS events during period
-                                     "?",  # number of PLMS with no arousals
-                                     "?",  # number of PLMS associated with arousals
+                                     n_plm,  # number of PLMS events during period
+                                     n_plm - n_plma,  # number of PLMS with no arousals
+                                     n_plma,  # number of PLMS associated with arousals
                                      "?",  # number of respiratory-associated LIMB MOVEMENT/PLMS [-0.5, 0.5] sec
                                      "?",  # number of respiratory-associated LIMB MOVEMENT/PLMS [-2.5, 2.5]sec
                                      count_during(pt.resp_events, hazard_period),  # number of resp. events
@@ -163,14 +165,16 @@ for pt in patients:
             ctrl = ctrl[0]
             plms = get_during(pt.plm_events, ctrl)
             resp = get_during(pt.resp_events, ctrl)
+            n_plma = count_during(pt.plma_events, ctrl)
+            n_plm = count_during(pt.plm_events, ctrl)
             outline.append(out_format.format(pt.id,  # pt ID
                                              n_nsvt,  # NSVT number for this patient
                                              0,  # this is for the control periods
                                              ctrl[0].strftime('%H:%M:%S'),  # start of CP
                                              pt.get_sleep_stage(ctrl[0]),  # sleep stage at start of CP
-                                             count_during(pt.plm_events, ctrl),  # number of PLMS events in period
-                                             "?", # number of PLMS with no arousals
-                                             "?", # number of PLMS associated with arousals
+                                             n_plm,  # number of PLMS events during period
+                                             n_plm - n_plma,  # number of PLMS with no arousals
+                                             n_plma,  # number of PLMS associated with arousals
                                              "?", # number of respiratory-associated LIMB MOVEMENT/PLMS [-0.5, 0.5] sec
                                              "?", # number of respiratory-associated LIMB MOVEMENT/PLMS [-2.5, 2.5]sec
                                              count_during(pt.resp_events, ctrl), # number of resp. events
