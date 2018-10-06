@@ -21,6 +21,7 @@ XML_DIRECTORY = DATA_DIR + '\\edfs'
 MSACCESS_DIRECTORY = DATA_DIR + '\\hrv'
 SOMTE_DIRECTORY = DATA_DIR + '\\shhs1-csv'
 
+INDUCTION_OUTPUT_DIR = "F:\\MrOS induction time\\induction\\data"
 OUTPUT_FILE = '\\results.csv'
 
 DT_CONTROL_WINDOW  = 2.5*60 # seconds - width of control window
@@ -52,152 +53,160 @@ pts_events = []
 pts_sleepevents = []
 # < /OPTIONAL >
 
+print "Loading patient data..."
 for pt in pt_ids:
     patients.append(Patient(pt, sleep_times[pt], study_times[pt], nsvt_times[pt], XML_DIRECTORY))
+print "Loading complete!"
 
-# create output file and write header
-fout = open(RESULTS_DIR + OUTPUT_FILE, 'w')
-fout.writelines("ID,patient_event_number,case_control,period_start_time,sleep_stage,PLMS_event,PLMS,PLMA,LMrespWASM,LMrespWink1,resp_event,apnea,hypopnea,RESPlmWASM,RESPlmWink1,minsat,arousal,AResp,APLMS,AAPLMS,ABPLMS,NSVT_start,NSVT_duration,NSVT_beats,NSVT_sstage,segment_duration,segment_start\n")
-out_format = "{},"*26 + "{}\n"
+# DURATION interations
+for duration in range(10, 280, 10):
+    print "Analyzing with period duration = %s ..." % duration
+    OUTPUT_FILE = '\\duration\\duration%s.csv' % duration
+    DT_CONTROL_PERIOD = duration
 
-# Do the actual work here...
-# for each patient
-stratum = 0
-for pt in patients:
-    print pt.id
-    n_nsvt = 0
+    # create output file and write header
+    fout = open(INDUCTION_OUTPUT_DIR + OUTPUT_FILE, 'w')
+    fout.writelines("ID,patient_event_number,case_control,period_start_time,sleep_stage,PLMS_event,PLMS,PLMA,LMrespWASM,LMrespWink1,resp_event,apnea,hypopnea,RESPlmWASM,RESPlmWink1,minsat,arousal,AResp,APLMS,AAPLMS,ABPLMS,NSVT_start,NSVT_duration,NSVT_beats,NSVT_sstage,segment_duration,segment_start\n")
+    out_format = "{},"*26 + "{}\n"
 
-    # generate approx 30 minute partitions from [sleep onset, lights on]
-    dt_chunk = create_even_chunks(pt.sleep_onset,pt.lights_on)
+    # Do the actual work here...
+    # for each patient
+    stratum = 0
+    for pt in patients:
+        print pt.id
+        n_nsvt = 0
 
-    # for each NSVT event
-    for nsvt in pt.nsvt_times:
-        ctrl_periods = []
+        # generate approx 30 minute partitions from [sleep onset, lights on]
+        dt_chunk = create_even_chunks(pt.sleep_onset,pt.lights_on)
 
-        # < OPTIONAL >
-        if pt.id not in pts_events:
-            pts_events.append(pt.id)
-        # < /OPTIONAL >
+        # for each NSVT event
+        for nsvt in pt.nsvt_times:
+            ctrl_periods = []
 
-        # ignore any NVST during wake
-        if not pt.is_sleep_time(nsvt):
-            continue
+            # < OPTIONAL >
+            if pt.id not in pts_events:
+                pts_events.append(pt.id)
+            # < /OPTIONAL >
 
-        # < OPTIONAL >
-        if pt.id not in pts_sleepevents:
-            pts_sleepevents.append(pt.id)
-        # < /OPTIONAL >
-
-        # find chunk start and chunk end for this NSVT event
-        chunk = chunk_times(nsvt, pt.sleep_onset, pt.lights_on, dt_chunk)
-
-        # build a control window for each  +/-10 minute interval from NSVT offset
-        ctrl_windows = get_control_windows(nsvt, chunk, DT_CONTROL_WINDOW, DT_INTERVAL)
-
-        # divide each window into control periods
-        for window in ctrl_windows:
-            poss_ctl_periods = pt.get_control_periods(window, DT_CONTROL_PERIOD)
-
-            if poss_ctl_periods:
-                # select one of the possible control periods
-                selected = random.sample(poss_ctl_periods, 1)
-                ctrl_periods.append(selected)
-
-        # skip this NSVT event if there are not sufficient number of control periods
-        if len(ctrl_periods) < MIN_N_CTRL_PERIODS:
-            continue
-
-        # downselect number of control periods
-        if N_CTRL_PERIODS is not None:
-            if len(ctrl_periods) >= N_CTRL_PERIODS:
-                ctrl_periods = random.sample(ctrl_periods, N_CTRL_PERIODS)
-            else:
+            # ignore any NVST during wake
+            if not pt.is_sleep_time(nsvt):
                 continue
 
-        # determine the hazard period for the NSVT
-        hazard_period = pt.get_hazard_period(nsvt, DT_CONTROL_PERIOD, DT_HAZARD_OFFSET)
+            # < OPTIONAL >
+            if pt.id not in pts_sleepevents:
+                pts_sleepevents.append(pt.id)
+            # < /OPTIONAL >
 
-        # update counters
-        n_nsvt += 1
-        stratum += 1
+            # find chunk start and chunk end for this NSVT event
+            chunk = chunk_times(nsvt, pt.sleep_onset, pt.lights_on, dt_chunk)
 
-        # < OPTIONAL >
-        # generate data to drive a histogram of the timing of the NSVT events evaluated
-        nsvt_clock.append((nsvt-datetime(2000,1,1)).total_seconds())  # list of NSVT event clock time
-        nsvt_sleep.append((nsvt-pt.sleep_onset).total_seconds())  # list of NSVT event time since sleep onset
-        # < /OPTIONAL >
+            # build a control window for each  +/-10 minute interval from NSVT offset
+            ctrl_windows = get_control_windows(nsvt, chunk, DT_CONTROL_WINDOW, DT_INTERVAL)
 
-        # prepare output
-        plms = get_during(pt.plm_events, hazard_period)
-        resp = get_during(pt.resp_events, hazard_period)
-        n_plma = count_during(pt.plma_events, hazard_period)
-        n_plm = count_during(pt.plm_events, hazard_period)
-        outline = [out_format.format(pt.id,      # pt ID
-                                     n_nsvt,     # NSVT number for this patient
-                                     1,          # this is for the HP
-                                     hazard_period[0].strftime('%H:%M:%S'),     # start of HP
-                                     pt.get_sleep_stage(nsvt),      # sleep stage at start of NSVT
-                                     n_plm,  # number of PLMS events during period
-                                     n_plm - n_plma,  # number of PLMS with no arousals
-                                     n_plma,  # number of PLMS associated with arousals
-                                     "?",  # number of respiratory-associated LIMB MOVEMENT/PLMS [-0.5, 0.5] sec
-                                     "?",  # number of respiratory-associated LIMB MOVEMENT/PLMS [-2.5, 2.5]sec
-                                     count_during(pt.resp_events, hazard_period),  # number of resp. events
-                                     "?",  # number of apneas
-                                     "?",  # number of hypopneas
-                                     "?",  # number of PLMS-associated RESPIRATORY EVENT [-0.5, 0.5] sec
-                                     "?",  # number of PLMS-associated RESPIRATORY EVENT [-2.5, 2.5] sec
-                                     pt.get_min_O2sat(hazard_period),  # min saturation
-                                     count_during(pt.arousal_events, hazard_period),  # number of arousals during CP
-                                     count_during(pt.arousal_resp, hazard_period), # resp_assos - number of resp associated arousals
-                                     count_during(pt.arousal_plm, hazard_period),  # number of arousals associated to PLM during HP
-                                     "?",  # number of arousals starting after or at same time as associated PLMS
-                                     "?",  # number of arousals starting before assocaited PLMS
-                                     nsvt.strftime('%H:%M:%S'),
-                                     "?",      # duration of NSVT, sec
-                                     "?",  # beats in arythmia
-                                     pt.get_sleep_stage(nsvt),
-                                     (chunk[1] - chunk[0]).seconds / 60.0,
-                                     chunk[0].strftime('%H:%M:%S')
-                                     )]
+            # divide each window into control periods
+            for window in ctrl_windows:
+                poss_ctl_periods = pt.get_control_periods(window, DT_CONTROL_PERIOD)
 
-        for ctrl in ctrl_periods:
-            ctrl = ctrl[0]
-            plms = get_during(pt.plm_events, ctrl)
-            resp = get_during(pt.resp_events, ctrl)
-            n_plma = count_during(pt.plma_events, ctrl)
-            n_plm = count_during(pt.plm_events, ctrl)
-            outline.append(out_format.format(pt.id,  # pt ID
-                                             n_nsvt,  # NSVT number for this patient
-                                             0,  # this is for the control periods
-                                             ctrl[0].strftime('%H:%M:%S'),  # start of CP
-                                             pt.get_sleep_stage(ctrl[0]),  # sleep stage at start of CP
-                                             n_plm,  # number of PLMS events during period
-                                             n_plm - n_plma,  # number of PLMS with no arousals
-                                             n_plma,  # number of PLMS associated with arousals
-                                             "?", # number of respiratory-associated LIMB MOVEMENT/PLMS [-0.5, 0.5] sec
-                                             "?", # number of respiratory-associated LIMB MOVEMENT/PLMS [-2.5, 2.5]sec
-                                             count_during(pt.resp_events, ctrl), # number of resp. events
-                                             "?", # number of apneas
-                                             "?", # number of hypopneas
-                                             "?", # number of PLMS-associated RESPIRATORY EVENT [-0.5, 0.5] sec
-                                             "?",  # number of PLMS-associated RESPIRATORY EVENT [-2.5, 2.5] sec
-                                             pt.get_min_O2sat(ctrl),  # min saturation
-                                             count_during(pt.arousal_events, ctrl),  # number of arousals during CP
-                                             count_during(pt.arousal_resp, ctrl),   # resp_assos - number of resp associated arousals
-                                             count_during(pt.arousal_plm, ctrl),  # number of arousals associated with PLM during CP
-                                             "?", # number of arousals starting after or at same time as associated PLMS
-                                             "?", # number of arousals starting before assocaited PLMS
-                                             nsvt.strftime('%H:%M:%S'),
-                                             "?",  # duration of NSVT, sec
-                                             "?", # beats in arythmia
-                                             pt.get_sleep_stage(nsvt), # sleep stage of epoch during nsvt
-                                             (chunk[1] - chunk[0]).seconds / 60.0,
-                                             chunk[0].strftime('%H:%M:%S')
-                                             ))
-        fout.writelines(outline)
+                if poss_ctl_periods:
+                    # select one of the possible control periods
+                    selected = random.sample(poss_ctl_periods, 1)
+                    ctrl_periods.append(selected)
 
-fout.close()
+            # skip this NSVT event if there are not sufficient number of control periods
+            if len(ctrl_periods) < MIN_N_CTRL_PERIODS:
+                continue
+
+            # downselect number of control periods
+            if N_CTRL_PERIODS is not None:
+                if len(ctrl_periods) >= N_CTRL_PERIODS:
+                    ctrl_periods = random.sample(ctrl_periods, N_CTRL_PERIODS)
+                else:
+                    continue
+
+            # determine the hazard period for the NSVT
+            hazard_period = pt.get_hazard_period(nsvt, DT_CONTROL_PERIOD, DT_HAZARD_OFFSET)
+
+            # update counters
+            n_nsvt += 1
+            stratum += 1
+
+            # < OPTIONAL >
+            # generate data to drive a histogram of the timing of the NSVT events evaluated
+            nsvt_clock.append((nsvt-datetime(2000,1,1)).total_seconds())  # list of NSVT event clock time
+            nsvt_sleep.append((nsvt-pt.sleep_onset).total_seconds())  # list of NSVT event time since sleep onset
+            # < /OPTIONAL >
+
+            # prepare output
+            plms = get_during(pt.plm_events, hazard_period)
+            resp = get_during(pt.resp_events, hazard_period)
+            n_plma = count_during(pt.plma_events, hazard_period)
+            n_plm = count_during(pt.plm_events, hazard_period)
+            outline = [out_format.format(pt.id,      # pt ID
+                                         n_nsvt,     # NSVT number for this patient
+                                         1,          # this is for the HP
+                                         hazard_period[0].strftime('%H:%M:%S'),     # start of HP
+                                         pt.get_sleep_stage(nsvt),      # sleep stage at start of NSVT
+                                         n_plm,  # number of PLMS events during period
+                                         n_plm - n_plma,  # number of PLMS with no arousals
+                                         n_plma,  # number of PLMS associated with arousals
+                                         "?",  # number of respiratory-associated LIMB MOVEMENT/PLMS [-0.5, 0.5] sec
+                                         "?",  # number of respiratory-ass ociated LIMB MOVEMENT/PLMS [-2.5, 2.5]sec
+                                         count_during(pt.resp_events, hazard_period),  # number of resp. events
+                                         "?",  # number of apneas
+                                         "?",  # number of hypopneas
+                                         "?",  # number of PLMS-associated RESPIRATORY EVENT [-0.5, 0.5] sec
+                                         "?",  # number of PLMS-associated RESPIRATORY EVENT [-2.5, 2.5] sec
+                                         pt.get_min_O2sat(hazard_period),  # min saturation
+                                         count_during(pt.arousal_events, hazard_period),  # number of arousals during CP
+                                         count_during(pt.arousal_resp, hazard_period), # resp_assos - number of resp associated arousals
+                                         count_during(pt.arousal_plm, hazard_period),  # number of arousals associated to PLM during HP
+                                         "?",  # number of arousals starting after or at same time as associated PLMS
+                                         "?",  # number of arousals starting before assocaited PLMS
+                                         nsvt.strftime('%H:%M:%S'),
+                                         "?",      # duration of NSVT, sec
+                                         "?",  # beats in arythmia
+                                         pt.get_sleep_stage(nsvt),
+                                         (chunk[1] - chunk[0]).seconds / 60.0,
+                                         chunk[0].strftime('%H:%M:%S')
+                                         )]
+
+            for ctrl in ctrl_periods:
+                ctrl = ctrl[0]
+                plms = get_during(pt.plm_events, ctrl)
+                resp = get_during(pt.resp_events, ctrl)
+                n_plma = count_during(pt.plma_events, ctrl)
+                n_plm = count_during(pt.plm_events, ctrl)
+                outline.append(out_format.format(pt.id,  # pt ID
+                                                 n_nsvt,  # NSVT number for this patient
+                                                 0,  # this is for the control periods
+                                                 ctrl[0].strftime('%H:%M:%S'),  # start of CP
+                                                 pt.get_sleep_stage(ctrl[0]),  # sleep stage at start of CP
+                                                 n_plm,  # number of PLMS events during period
+                                                 n_plm - n_plma,  # number of PLMS with no arousals
+                                                 n_plma,  # number of PLMS associated with arousals
+                                                 "?", # number of respiratory-associated LIMB MOVEMENT/PLMS [-0.5, 0.5] sec
+                                                 "?", # number of respiratory-associated LIMB MOVEMENT/PLMS [-2.5, 2.5]sec
+                                                 count_during(pt.resp_events, ctrl), # number of resp. events
+                                                 "?", # number of apneas
+                                                 "?", # number of hypopneas
+                                                 "?", # number of PLMS-associated RESPIRATORY EVENT [-0.5, 0.5] sec
+                                                 "?",  # number of PLMS-associated RESPIRATORY EVENT [-2.5, 2.5] sec
+                                                 pt.get_min_O2sat(ctrl),  # min saturation
+                                                 count_during(pt.arousal_events, ctrl),  # number of arousals during CP
+                                                 count_during(pt.arousal_resp, ctrl),   # resp_assos - number of resp associated arousals
+                                                 count_during(pt.arousal_plm, ctrl),  # number of arousals associated with PLM during CP
+                                                 "?", # number of arousals starting after or at same time as associated PLMS
+                                                 "?", # number of arousals starting before assocaited PLMS
+                                                 nsvt.strftime('%H:%M:%S'),
+                                                 "?",  # duration of NSVT, sec
+                                                 "?", # beats in arythmia
+                                                 pt.get_sleep_stage(nsvt), # sleep stage of epoch during nsvt
+                                                 (chunk[1] - chunk[0]).seconds / 60.0,
+                                                 chunk[0].strftime('%H:%M:%S')
+                                                 ))
+            fout.writelines(outline)
+
+    fout.close()
 
 # < OPTIONAL >
 fout_a = open('nsvt_clock.csv', 'w')
